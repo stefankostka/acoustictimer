@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acoustic Stopwatch</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background: #0d0d0d; color: #00ff88; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        h1 { font-size: 1rem; letter-spacing: 0.4em; text-transform: uppercase; color: #555; margin-bottom: 2.5rem; }
+        .display { font-size: 7rem; font-weight: bold; letter-spacing: 0.05em; text-shadow: 0 0 30px #00ff8899, 0 0 60px #00ff8833; margin-bottom: 0.5rem; min-width: 14rem; text-align: center; font-variant-numeric: tabular-nums; }
+        .speaking-box { height: 2rem; font-size: 0.9rem; color: #ffbb33; letter-spacing: 0.15em; margin-bottom: 2.5rem; opacity: 0; transition: opacity 0.15s; text-align: center; }
+        .speaking-box.active { opacity: 1; }
+        .controls { display: flex; gap: 1rem; margin-bottom: 2.5rem; }
+        button { padding: 0.75rem 2.2rem; font-size: 1rem; font-family: 'Courier New', monospace; letter-spacing: 0.12em; text-transform: uppercase; border: 2px solid currentColor; background: transparent; cursor: pointer; border-radius: 4px; transition: background 0.15s, box-shadow 0.15s; }
+        #startStop { color: #00ff88; min-width: 9rem; }
+        #startStop:hover { background: #00ff8818; box-shadow: 0 0 12px #00ff8844; }
+        #startStop.running { color: #ff4455; border-color: #ff4455; }
+        #startStop.running:hover { background: #ff445518; box-shadow: 0 0 12px #ff445544; }
+        #reset { color: #666; }
+        #reset:hover { color: #aaa; background: #ffffff0d; }
+        .options { display: flex; align-items: center; gap: 0.7rem; font-size: 0.82rem; color: #555; letter-spacing: 0.06em; }
+        select { background: #161616; color: #999; border: 1px solid #333; padding: 0.25rem 0.6rem; font-family: 'Courier New', monospace; font-size: 0.82rem; border-radius: 3px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Acoustic Stopwatch</h1>
+    <div class="display" id="display">00:00</div>
+    <div class="speaking-box" id="speakBox">&#9654; <span id="speakText"></span></div>
+    <div class="controls">
+        <button id="startStop">Start</button>
+        <button id="reset">Reset</button>
+    </div>
+    <div class="options">
+        <span>Announce every</span>
+        <select id="interval">
+            <option value="1">1 second</option>
+            <option value="5">5 seconds</option>
+            <option value="10">10 seconds</option>
+            <option value="30">30 seconds</option>
+            <option value="60">1 minute</option>
+        </select>
+    </div>
+    <script>
+        let elapsed = 0, running = false, timerId = null;
+        const display = document.getElementById('display');
+        const speakBox = document.getElementById('speakBox');
+        const speakText = document.getElementById('speakText');
+        const btn = document.getElementById('startStop');
+        const resetBtn = document.getElementById('reset');
+        const intSel = document.getElementById('interval');
+        function pad(n) { return String(n).padStart(2, '0'); }
+        function formatDisplay(s) { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60; return h>0?`${pad(h)}:${pad(m)}:${pad(sec)}`:`${pad(m)}:${pad(sec)}`; }
+        function buildSpeech(s) { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60,p=[]; if(h)p.push(`${h} ${h===1?'hour':'hours'}`); if(m)p.push(`${m} ${m===1?'minute':'minutes'}`); if(sec||!p.length)p.push(`${sec}`); return p.join(' '); }
+        function speak(text) { if(!window.speechSynthesis)return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.rate=1.1; speakText.textContent=text; speakBox.classList.add('active'); u.onend=u.onerror=()=>speakBox.classList.remove('active'); speechSynthesis.speak(u); }
+        function tick() { elapsed++; display.textContent=formatDisplay(elapsed); if(elapsed%parseInt(intSel.value)===0)speak(buildSpeech(elapsed)); }
+        btn.addEventListener('click',()=>{ if(running){clearInterval(timerId);speechSynthesis.cancel();speakBox.classList.remove('active');btn.textContent='Start';btn.classList.remove('running');}else{timerId=setInterval(tick,1000);btn.textContent='Stop';btn.classList.add('running');} running=!running; });
+        resetBtn.addEventListener('click',()=>{ clearInterval(timerId);speechSynthesis.cancel();speakBox.classList.remove('active');running=false;elapsed=0;display.textContent='00:00';btn.textContent='Start';btn.classList.remove('running'); });
+    </script>
+</body>
+</html>
